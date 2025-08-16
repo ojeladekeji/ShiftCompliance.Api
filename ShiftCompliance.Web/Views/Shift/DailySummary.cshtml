@@ -1,0 +1,18 @@
+﻿@{
+    ViewData["Title"] = "Daily Summary";
+}
+
+<h2>Daily Summary</h2>
+
+<form method="get">
+    <label>Select Date:</label>
+    <input type="date" name="day" value="@ViewBag.Day" />
+
+    <button type="submit">Get Summary</button>
+</form>
+
+@if (ViewBag.SummaryJson != null)
+{
+    <h4>Summary JSON:</h4>
+    <pre>@ViewBag.SummaryJson</pre>
+}
