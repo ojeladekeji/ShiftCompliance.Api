@@ -35,7 +35,9 @@ builder.Services.AddSingleton<IStorageService, LocalStorageService>();
 
 // Pick ONE analyzer. Use BrightnessAnalyzer for now; swap to AzureCustomVisionAnalyzer later.
 // builder.Services.AddHttpClient<IImageAnalyzer, AzureCustomVisionAnalyzer>();
-builder.Services.AddSingleton<IImageAnalyzer, BrightnessAnalyzer>();
+//builder.Services.AddSingleton<IImageAnalyzer, BrightnessAnalyzer>();
+//builder.Services.AddSingleton<IImageAnalyzer, MarkerAnalyzer>();
+builder.Services.AddSingleton<IImageAnalyzer, MarkerColorAnalyzer>();
 
 var app = builder.Build();
 
