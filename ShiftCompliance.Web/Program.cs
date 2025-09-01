@@ -1,11 +1,18 @@
+using System.Net;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddHttpClient("ShiftApi", client =>
+builder.Services.AddHttpClient("ShiftApi", c =>
 {
-    client.BaseAddress = new Uri("https://localhost:7255/"); // your API base URL
+    c.BaseAddress = new Uri("https://localhost:7255/");
+    c.DefaultRequestVersion = HttpVersion.Version11;
+    c.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
+    c.DefaultRequestHeaders.Accept.Add(
+        new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
 });
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

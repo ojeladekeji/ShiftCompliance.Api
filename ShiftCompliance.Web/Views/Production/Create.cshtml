@@ -1,0 +1,319 @@
+﻿@model ShiftCompliance.Web.Models.Vm.CreateVm
+@{
+    ViewData["Title"] = "Create Production";
+    // Adjust if your API runs elsewhere
+    var apiBase = "https://localhost:7255";
+}
+
+<h2>Create Production</h2>
+
+<form asp-action="Create" method="post" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+
+    <fieldset>
+        <legend>General</legend>
+
+        <div class="mb-2">
+            <label class="form-label">No</label>
+            <input asp-for="No" class="form-control" placeholder="(auto)" />
+        </div>
+
+        <div class="mb-2">
+            <label class="form-label">Description</label>
+            <input asp-for="Description" class="form-control" />
+        </div>
+
+        <div class="mb-2">
+            <label class="form-label">Shift</label>
+            <select asp-for="Shift" class="form-select">
+                <option>Morning</option>
+                <option>Afternoon</option>
+                <option>Night</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="ShiftSupervisorId" class="form-label">Shift Supervisor</label>
+            <select asp-for="ShiftSupervisorId" asp-items="Model.Supervisors" class="form-select">
+                <option value="">-- Select Supervisor --</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="PostingDateLocal" class="form-label">Posting Date</label>
+            <input asp-for="PostingDateLocal"
+                   type="datetime-local"
+                   class="form-control"
+                   value="@(Model.PostingDateLocal?.ToString("yyyy-MM-ddTHH:mm"))" />
+        </div>
+
+        <div class="mb-2">
+            <label class="form-label">Remark</label>
+            <input asp-for="Remark" class="form-control" />
+        </div>
+
+        <div class="mb-2">
+            <label class="form-label">Image</label>
+            <input asp-for="Image" type="file" accept=".jpg,.jpeg,.png" class="form-control" required />
+        </div>
+    </fieldset>
+
+    <fieldset class="mt-3">
+        <legend>Lines</legend>
+
+        <table class="table table-bordered align-middle">
+            <thead>
+                <tr>
+                    <th>Line No</th>
+                    <th style="width:220px;">Item No</th>
+                    <th style="width:320px;">Description</th>
+                    <th>Quantity</th>
+                    <th>UoM</th>
+                    <th>Downtime (min)</th>
+                    <th>Overtime (hrs)</th>
+                    <th>Safety Incidents</th>
+                    <th>Remark</th>
+                    <th style="width:70px;"></th>
+                </tr>
+            </thead>
+            <tbody id="lines-body">
+                @for (int i = 0; i < Model.Lines.Count; i++)
+                {
+                    <tr>
+                        <td>
+                            <input asp-for="Lines[@i].LineNo" class="form-control" />
+                        </td>
+
+                        <!-- Item No dropdown -->
+                        <td>
+                            <select name="Lines[@i].ItemNo"
+                                    id="itemNo-@i"
+                                    class="form-select item-no"
+                                    onchange="onItemNoChanged(@i)">
+                                <option value="">-- Select Item --</option>
+                            </select>
+                        </td>
+
+                        <!-- Description dropdown -->
+                        <td>
+                            <select name="Lines[@i].Description"
+                                    id="itemDesc-@i"
+                                    class="form-select item-desc"
+                                    onchange="onItemDescChanged(@i)">
+                                <option value="">-- Select Description --</option>
+                            </select>
+                        </td>
+
+                        <td>
+                            <input asp-for="Lines[@i].Quantity" type="number" step="0.01" class="form-control" />
+                        </td>
+                        <td>
+                            <input asp-for="Lines[@i].UnitOfMeasure" id="uom-@i" class="form-control" />
+                        </td>
+                        <td>
+                            <input asp-for="Lines[@i].DowntimeMinutes" type="number" class="form-control" />
+                        </td>
+                        <td>
+                            <input asp-for="Lines[@i].OvertimeHours" type="number" step="0.01" class="form-control" />
+                        </td>
+                        <td>
+                            <input asp-for="Lines[@i].SafetyIncidents" type="number" class="form-control" />
+                        </td>
+                        <td>
+                            <input asp-for="Lines[@i].Remark" class="form-control" />
+                        </td>
+
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-outline-danger remove-line">X</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <button type="button" class="btn btn-secondary" id="add-line">+ Add Line</button>
+    </fieldset>
+
+    <button type="submit" class="btn btn-primary mt-3">Create</button>
+</form>
+
+@if (ViewBag.Result != null)
+{
+    <h4 class="mt-3">Result</h4>
+    <pre>@ViewBag.Result</pre>
+}
+
+@section Styles {
+    <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet" />
+}
+@section Scripts {
+    <script>
+        // Use the API base defined in the layout
+        const apiBase = "@apiBase";
+
+        // Cache of items and quick lookup maps
+        let items = []; // [{ itemNo, description, unitOfMeasure }]
+        const byNo   = Object.create(null);
+        const byDesc = Object.create(null);
+
+        // Fill a plain <select> with options
+        function fillSelect(selectEl, list, valueKey, textBuilder) {
+            selectEl.innerHTML = ""; // clear
+            const ph = document.createElement("option");
+            ph.value = "";
+            ph.textContent = valueKey === "itemNo" ? "-- Select Item --" : "-- Select Description --";
+            selectEl.appendChild(ph);
+
+            list.forEach(it => {
+                const opt = document.createElement("option");
+                opt.value = it[valueKey];
+                opt.textContent = textBuilder ? textBuilder(it) : it[valueKey];
+                selectEl.appendChild(opt);
+            });
+        }
+
+        // Build the lookup maps
+        function rebuildIndex(list) {
+            for (const k in byNo)   delete byNo[k];
+            for (const k in byDesc) delete byDesc[k];
+            list.forEach(it => {
+                byNo[it.itemNo] = it;
+                byDesc[it.description] = it;
+            });
+        }
+
+        // Load items once
+        async function loadItems() {
+            try {
+                const res = await fetch(`${apiBase}/api/items?top=200`);
+                if (!res.ok) {
+                    console.error("Failed to load items", res.status);
+                    return;
+                }
+                items = await res.json(); // [{ itemNo, description, unitOfMeasure }]
+                rebuildIndex(items);
+
+                // Fill all current rows
+                document.querySelectorAll(".item-no").forEach(el => {
+                    fillSelect(el, items, "itemNo", it => `${it.itemNo} — ${it.description}`);
+                });
+                document.querySelectorAll(".item-desc").forEach(el => {
+                    fillSelect(el, items, "description", it => `${it.description} — ${it.itemNo}`);
+                });
+            } catch (e) {
+                console.error("Error loading items:", e);
+            }
+        }
+
+        // Row helpers (id convention: itemNo-#, itemDesc-#, uom-#)
+        function rowRefs(i) {
+            return {
+                no:   document.getElementById(`itemNo-${i}`),
+                desc: document.getElementById(`itemDesc-${i}`),
+                uom:  document.getElementById(`uom-${i}`)
+            };
+        }
+
+        // When Item No changes: update description + UoM
+        window.onItemNoChanged = function (i) {
+            const { no, desc, uom } = rowRefs(i);
+            const key = no.value;
+            if (!key || !byNo[key]) {
+                desc.value = "";
+                uom.value = "";
+                return;
+            }
+            const it = byNo[key];
+            desc.value = it.description;
+            uom.value  = it.unitOfMeasure || "PCS";
+        };
+
+        // When Description changes: update item no + UoM
+        window.onItemDescChanged = function (i) {
+            const { no, desc, uom } = rowRefs(i);
+            const key = desc.value;
+            if (!key || !byDesc[key]) {
+                // leave user to correct
+                return;
+            }
+            const it = byDesc[key];
+            no.value = it.itemNo;
+            uom.value = it.unitOfMeasure || "PCS";
+        };
+
+        // Add-line button wiring (if you use it)
+        const tbody  = document.getElementById("lines-body");
+        const addBtn = document.getElementById("add-line");
+        if (addBtn) addBtn.addEventListener("click", addLine);
+        if (tbody)  tbody.addEventListener("click", e => {
+            if (e.target.classList.contains("remove-line")) {
+                e.target.closest("tr").remove();
+                reindexLines();
+            }
+        });
+
+        function nextLineNo() {
+            const rows = [...tbody.querySelectorAll("tr")];
+            if (rows.length === 0) return 10000;
+            const last = rows[rows.length - 1].querySelector('input[name$=".LineNo"]');
+            const val = parseInt(last?.value || "0", 10) || 0;
+            return val > 0 ? val + 10000 : (rows.length + 1) * 10000;
+        }
+
+        function addLine() {
+            const index = tbody.children.length;
+            const lineNo = nextLineNo();
+
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td><input name="Lines[${index}].LineNo" value="${lineNo}" class="form-control" /></td>
+
+              <td>
+                <select name="Lines[${index}].ItemNo" id="itemNo-${index}" class="form-select item-no"
+                        onchange="onItemNoChanged(${index})"></select>
+              </td>
+
+              <td>
+                <select name="Lines[${index}].Description" id="itemDesc-${index}" class="form-select item-desc"
+                        onchange="onItemDescChanged(${index})"></select>
+              </td>
+
+              <td><input name="Lines[${index}].Quantity" type="number" step="0.01" value="0" class="form-control" /></td>
+              <td><input name="Lines[${index}].UnitOfMeasure" id="uom-${index}" class="form-control" /></td>
+              <td><input name="Lines[${index}].DowntimeMinutes" type="number" value="0" class="form-control" /></td>
+              <td><input name="Lines[${index}].OvertimeHours" type="number" step="0.01" value="0" class="form-control" /></td>
+              <td><input name="Lines[${index}].SafetyIncidents" type="number" value="0" class="form-control" /></td>
+              <td><input name="Lines[${index}].Remark" class="form-control" /></td>
+              <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger remove-line">X</button></td>
+            `;
+            tbody.appendChild(row);
+
+            // Fill the new row's selects with the cached items
+            fillSelect(document.getElementById(`itemNo-${index}`),  items, "itemNo", it => `${it.itemNo} — ${it.description}`);
+            fillSelect(document.getElementById(`itemDesc-${index}`), items, "description", it => `${it.description} — ${it.itemNo}`);
+        }
+
+        function reindexLines() {
+            const rows = [...tbody.querySelectorAll("tr")];
+            rows.forEach((tr, i) => {
+                tr.querySelectorAll("input,select").forEach(el => {
+                    const name = el.getAttribute("name");
+                    if (!name) return;
+                    el.setAttribute("name", name.replace(/Lines\[\d+\]\./, `Lines[${i}].`));
+                });
+                // fix ids and handlers
+                const no   = tr.querySelector('[id^="itemNo-"]');
+                const desc = tr.querySelector('[id^="itemDesc-"]');
+                const uom  = tr.querySelector('[id^="uom-"]');
+                if (no)   { no.id   = `itemNo-${i}`;   no.setAttribute("onchange", `onItemNoChanged(${i})`); }
+                if (desc) { desc.id = `itemDesc-${i}`; desc.setAttribute("onchange", `onItemDescChanged(${i})`); }
+                if (uom)  { uom.id  = `uom-${i}`; }
+            });
+        }
+
+        // Load the items once the page is ready and populate the first row selects
+        document.addEventListener("DOMContentLoaded", async () => {
+            await loadItems();
+        });
+    </script>
+}

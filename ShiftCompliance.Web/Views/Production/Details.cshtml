@@ -1,0 +1,94 @@
+﻿@model ShiftCompliance.Web.Models.Vm.ProductionDetailsVm
+@{
+    ViewData["Title"] = $"Production {Model.No}";
+   
+}
+
+<h2>Production @Model.No</h2>
+
+<div class="row mb-3">
+    <div class="col-md-8">
+        <dl class="row">
+            <dt class="col-sm-3">Description</dt>
+            <dd class="col-sm-9">@Model.Description</dd>
+
+            <dt class="col-sm-3">Shift</dt>
+            <dd class="col-sm-9">@Model.Shift</dd>
+
+            <dt class="col-sm-3">Supervisor</dt>
+            <dd class="col-sm-9">@Model.ShiftSupervisor</dd>
+
+            <dt class="col-sm-3">Posting Date</dt>
+            <dd class="col-sm-9">@Model.PostingDateUtc?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+
+            <dt class="col-sm-3">Status</dt>
+          @*   <dd class="col-sm-9">@StatusText(Model.Status)</dd> *@
+
+            <dt class="col-sm-3">Compliance</dt>
+            <dd class="col-sm-9">
+                @if (Model.IsCompliant == true)
+                {
+                    <span class="badge bg-success">Compliant</span>
+                }
+                else if (Model.IsCompliant == false)
+                {
+                    <span class="badge bg-danger">Non-compliant</span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary">N/A</span>
+                }
+                @if (Model.ComplianceScore is not null)
+                {
+                    <span class="ms-2">Score: @Model.ComplianceScore.Value.ToString("0.###")</span>
+                }
+            </dd>
+        </dl>
+    </div>
+
+    <div class="col-md-4">
+        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+        {
+            <img src="@Model.ImageUrl"
+                 alt="Production image"
+                 class="float-end img-thumbnail ms-3 mb-3"
+                 style="max-width:360px; border-radius:8px;" />
+        }
+
+    </div>
+</div>
+
+<h4>Lines</h4>
+<table class="table table-bordered table-sm">
+    <thead>
+        <tr>
+            <th>Line No</th>
+            <th>Item No</th>
+            <th class="text-end">Quantity</th>
+            <th>UoM</th>
+            <th class="text-end">Downtime (min)</th>
+            <th class="text-end">Overtime (hrs)</th>
+            <th class="text-end">Safety</th>
+            <th>Remark</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var l in Model.Lines.OrderBy(x => x.LineNo))
+        {
+            <tr>
+                <td>@l.LineNo</td>
+                <td>@l.ItemNo</td>
+                <td class="text-end">@l.Quantity</td>
+                <td>@l.UnitOfMeasure</td>
+                <td class="text-end">@l.DowntimeMinutes</td>
+                <td class="text-end">@l.OvertimeHours</td>
+                <td class="text-end">@l.SafetyIncidents</td>
+                <td>@l.Remark</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<p>
+    <a asp-action="List" class="btn btn-outline-secondary">&larr; Back to List</a>
+</p>

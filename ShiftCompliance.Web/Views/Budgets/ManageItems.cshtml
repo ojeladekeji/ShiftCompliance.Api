@@ -1,0 +1,190 @@
+﻿@model ShiftCompliance.Web.Models.Vm.ShiftItemBudgetManageVm
+@{
+    ViewData["Title"] = "Manage Shift Item Budgets";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (TempData["Ok"] != null)
+{
+    <div class="alert alert-success">@TempData["Ok"]</div>
+}
+@if (TempData["Err"] != null || ViewBag.Error != null)
+{
+    <div class="alert alert-danger">@TempData["Err"] @ViewBag.Error</div>
+}
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-auto">
+        <label class="form-label">From</label>
+        <input type="date" class="form-control" name="from" value="@Model.From.ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="col-auto">
+        <label class="form-label">To</label>
+        <input type="date" class="form-control" name="to" value="@Model.To.ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="col-auto">
+        <label class="form-label">Shift</label>
+        <select class="form-select" name="shift">
+            <option value="">(All)</option>
+            <option value="Morning" selected="@(Model.Shift == "Morning")">Morning</option>
+            <option value="Afternoon" selected="@(Model.Shift == "Afternoon")">Afternoon</option>
+            <option value="Night" selected="@(Model.Shift == "Night")">Night</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <label class="form-label">Item</label>
+        <select class="form-select" name="itemNo">
+            <option value="">(All)</option>
+            @foreach (var it in Model.Items)
+            {
+                <option value="@it.Value" selected="@(Model.ItemNo == it.Value)">@it.Text</option>
+            }
+        </select>
+    </div>
+    <div class="col-auto form-check align-self-end">
+        <input class="form-check-input" type="checkbox" name="activeOnly" value="true" checked="@(Model.ActiveOnly)" />
+        <label class="form-check-label">Active only</label>
+    </div>
+    <div class="col-auto align-self-end">
+        <button class="btn btn-secondary">Apply</button>
+    </div>
+</form>
+
+<div class="card mb-4">
+    <div class="card-header">Add / Update Item Budget</div>
+    <div class="card-body">
+        <form asp-action="UpsertItem" method="post" class="row g-2">
+            @Html.AntiForgeryToken()
+
+            <div class="col-auto">
+                <label class="form-label">Date</label>
+                <input type="date" name="Date" class="form-control" value="@Model.NewBudget.Date.ToString("yyyy-MM-dd")" required />
+            </div>
+
+            <div class="col-auto">
+                <label class="form-label">Shift</label>
+                <select name="Shift" class="form-select">
+                    <option value="Morning" selected="@(Model.NewBudget.Shift == "Morning")">Morning</option>
+                    <option value="Afternoon" selected="@(Model.NewBudget.Shift == "Afternoon")">Afternoon</option>
+                    <option value="Night" selected="@(Model.NewBudget.Shift == "Night")">Night</option>
+                </select>
+            </div>
+
+            <div class="col-auto">
+                <label class="form-label">Item</label>
+                <select name="ItemNo" class="form-select" required>
+                    <option value="">-- Select Item --</option>
+                    @foreach (var it in Model.Items)
+                    {
+                        <option value="@it.Value" selected="@(Model.NewBudget.ItemNo == it.Value)">@it.Text</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-auto">
+                <label class="form-label">Target Qty</label>
+                <input type="number" step="0.01" name="TargetQty" class="form-control" value="@Model.NewBudget.TargetQty" required />
+            </div>
+
+            <div class="col-3">
+                <label class="form-label">Remark</label>
+                <input name="Remark" class="form-control" value="@Model.NewBudget.Remark" />
+            </div>
+
+            <div class="col-auto align-self-end">
+                <button class="btn btn-primary">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th style="width:120px">Date</th>
+            <th style="width:120px">Shift</th>
+            <th style="width:160px">Item No</th>
+            <th class="text-end" style="width:140px">Target Qty</th>
+            <th>Remark</th>
+            <th style="width:100px"></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var r in Model.Rows)
+        {
+            <tr>
+                <td>@r.Date.ToString("yyyy-MM-dd")</td>
+                <td>@r.Shift</td>
+                <td>@r.ItemNo</td>
+                <td class="text-end">@r.TargetQty</td>
+                <td>@r.Remark</td>
+                <td>
+                    <form asp-action="DeleteItem" method="post" onsubmit="return confirm('Delete this item budget?');">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@r.Id" />
+                        <input type="hidden" name="from" value="@Model.From.ToString("yyyy-MM-dd")" />
+                        <input type="hidden" name="to" value="@Model.To.ToString("yyyy-MM-dd")" />
+                        <input type="hidden" name="shift" value="@Model.Shift" />
+                        <input type="hidden" name="itemNo" value="@Model.ItemNo" />
+                        <input type="hidden" name="activeOnly" value="@(Model.ActiveOnly ? "true" : "false")" />
+                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (Model.TotalPages > 1)
+{
+    <nav aria-label="Pagination">
+        <ul class="pagination">
+            @{
+                int prev = Model.Page > 1 ? Model.Page - 1 : 1;
+                int next = Model.Page < Model.TotalPages ? Model.Page + 1 : Model.TotalPages;
+
+                string routeBase = Url.Action("ManageItems", "Budgets")!;
+                string q(string key, object? val) => $"{key}={Uri.EscapeDataString(val?.ToString() ?? "")}";
+
+                var parts = new List<string>
+        {
+        q("from", Model.From.ToString("yyyy-MM-dd")),
+        q("to",   Model.To.ToString("yyyy-MM-dd")),
+        q("shift", Model.Shift ?? ""),
+        q("itemNo", Model.ItemNo ?? ""),
+        q("pageSize", Model.PageSize)
+        };
+                if (Model.ActiveOnly) parts.Add("activeOnly=true");
+
+                string common = string.Join("&", parts);
+                string pageHref(int p) => $"{routeBase}?{common}&page={p}";
+            }
+
+            <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
+                <a class="page-link" href="@pageHref(1)">First</a>
+            </li>
+            <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
+                <a class="page-link" href="@pageHref(prev)">Prev</a>
+            </li>
+
+            @{
+                int start = Math.Max(1, Model.Page - 2);
+                int end = Math.Min(Model.TotalPages, Model.Page + 2);
+                for (int p = start; p <= end; p++)
+                {
+                    <li class="page-item @(p == Model.Page ? "active" : "")">
+                        <a class="page-link" href="@pageHref(p)">@p</a>
+                    </li>
+                }
+            }
+
+            <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
+                <a class="page-link" href="@pageHref(next)">Next</a>
+            </li>
+            <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
+                <a class="page-link" href="@pageHref(Model.TotalPages)">Last</a>
+            </li>
+        </ul>
+    </nav>
+}

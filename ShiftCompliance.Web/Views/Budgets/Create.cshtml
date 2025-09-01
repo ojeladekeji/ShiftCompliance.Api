@@ -1,0 +1,81 @@
+﻿@model ShiftCompliance.Web.Models.Vm.BudgetCreateVm
+@{
+    ViewData["Title"] = "Create Budget";
+    var apiBase = "http://localhost:7255";   // API project base URL
+}
+
+<h2>Create Budget</h2>
+
+@if (TempData["ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+
+<form asp-action="Create" method="post" class="row g-3">
+    @Html.AntiForgeryToken()
+
+    <div class="col-md-3">
+        <label asp-for="Date" class="form-label"></label>
+        <input asp-for="Date" type="date" class="form-control" />
+        <span asp-validation-for="Date" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-3">
+        <label asp-for="Shift" class="form-label"></label>
+        <select asp-for="Shift" class="form-select">
+            <option>Morning</option>
+            <option>Afternoon</option>
+            <option>Night</option>
+        </select>
+        <span asp-validation-for="Shift" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-4">
+        <label asp-for="ItemNo" class="form-label"></label>
+        <select asp-for="ItemNo"
+                asp-items="Model.Items"
+                class="form-select">
+            <option value="">-- Select Item --</option>
+        </select>
+        <span asp-validation-for="ItemNo" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-2">
+        <label asp-for="TargetQty" class="form-label"></label>
+        <input asp-for="TargetQty" type="number" step="0.01" class="form-control" />
+        <span asp-validation-for="TargetQty" class="text-danger"></span>
+    </div>
+
+    <div class="col-12">
+        <button class="btn btn-primary">Save Budget</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const apiBase = "@apiBase";
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            try {
+                const res = await fetch(`${apiBase}/api/items?top=200`);
+                if (!res.ok) {
+                    console.error("Failed to load items", res.status);
+                    return;
+                }
+                const items = await res.json();
+                const sel = document.getElementById("itemNo");
+
+                items.forEach(it => {
+                    const opt = document.createElement("option");
+                    // NOTE: API returns PascalCase (ItemNo, Description)
+                    opt.value = it.ItemNo;
+                    opt.textContent = `${it.ItemNo} — ${it.Description}`;
+                    sel.appendChild(opt);
+                });
+            } catch (err) {
+                console.error("Error fetching items:", err);
+            }
+        });
+    </script>
+}

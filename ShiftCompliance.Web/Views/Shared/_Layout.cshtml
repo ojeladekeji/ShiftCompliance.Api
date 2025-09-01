@@ -4,41 +4,94 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - ShiftCompliance.Web</title>
+
+    <!-- Core CSS -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/ShiftCompliance.Web.styles.css" asp-append-version="true" />
+
+    <!-- Tom Select CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet" />
+
+    <!-- Allow per-view styles -->
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">ShiftCompliance.Web</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+        <nav class="navbar navbar-expand-sm navbar-light bg-light border-bottom box-shadow mb-3">
+            <div class="container">
+                <a class="navbar-brand" asp-controller="Home" asp-action="Index">Shift Compliance</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                <div class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse">
                     <ul class="navbar-nav flex-grow-1">
+
+                        <!-- Home -->
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link text-dark" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
 
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="Shift" asp-action="Upload">Upload</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="Shift" asp-action="DailySummary">Daily Summary</a>
+                        <!-- Shifts -->
+                        @* <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-dark" href="#" role="button" data-bs-toggle="dropdown">
+                                Shifts
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" asp-controller="Shift" asp-action="Upload">Upload Shift Image</a></li>
+                                <li><a class="dropdown-item" asp-controller="Shift" asp-action="DailySummary">Daily Summary</a></li>
+                                <li><a class="dropdown-item" asp-controller="Shift" asp-action="RollingSummary">Rolling Summary</a></li>
+                            </ul>
+                        </li> *@
+
+                        <!-- Production -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-dark" href="#" data-bs-toggle="dropdown">Production</a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" asp-controller="Production" asp-action="List">Production List</a></li>
+                                <li><a class="dropdown-item" asp-controller="Production" asp-action="Create">New Production</a></li>
+                            </ul>
                         </li>
 
-
+                        <!-- Items -->
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link text-dark" asp-controller="Item" asp-action="Index">Items</a>
+                        </li>
+
+                        <!-- Budgets -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-dark" href="#" role="button" data-bs-toggle="dropdown">
+                                Budgets
+                            </a>
+                            <ul class="dropdown-menu">
+                                <!-- If you add a simple CRUD UI later -->
+                                <a class="dropdown-item" asp-controller="Budgets" asp-action="ManageItems">
+                                    Manage Shift Item Budgets
+                                </a>
+                                <li><a class="dropdown-item" asp-controller="Budgets" asp-action="Create">New Budget</a></li>
+
+                            </ul>
+                        </li>
+
+                        <!-- Reports -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-dark" href="#" role="button" data-bs-toggle="dropdown">
+                                Reports
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Reports" asp-action="ShiftBudgetVsActual">
+                                        Shift Budget vs Actual
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
                     </ul>
                 </div>
             </div>
         </nav>
     </header>
+
     <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()
@@ -50,9 +103,16 @@
             &copy; 2025 - ShiftCompliance.Web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
+
+    <!-- Core JS -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <!-- Tom Select JS -->
+    <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+
+    <!-- Allow per-view scripts -->
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

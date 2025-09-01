@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ShiftCompliance.Api.Data;
 
@@ -11,9 +12,11 @@ using ShiftCompliance.Api.Data;
 namespace ShiftCompliance.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250901201752_UndoItem")]
+    partial class UndoItem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -206,16 +209,19 @@ namespace ShiftCompliance.Api.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<int?>("ItemId")
+                        .HasColumnType("int");
+
                     b.Property<string>("ItemNo")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Remark")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Shift")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("TargetQty")
                         .HasColumnType("decimal(18,2)");
@@ -225,9 +231,7 @@ namespace ShiftCompliance.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Shift", "ItemNo")
-                        .IsUnique()
-                        .HasFilter("[IsActive] = 1");
+                    b.HasIndex("ItemId");
 
                     b.ToTable("ShiftItemBudgets");
                 });
@@ -303,6 +307,15 @@ namespace ShiftCompliance.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("ProductionEntry");
+                });
+
+            modelBuilder.Entity("ShiftCompliance.Api.Models.ShiftItemBudget", b =>
+                {
+                    b.HasOne("ShiftCompliance.Api.Models.Item", "Item")
+                        .WithMany()
+                        .HasForeignKey("ItemId");
+
+                    b.Navigation("Item");
                 });
 
             modelBuilder.Entity("ShiftCompliance.Api.Models.ProductionEntry", b =>

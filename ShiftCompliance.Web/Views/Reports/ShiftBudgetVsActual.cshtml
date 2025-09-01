@@ -1,0 +1,128 @@
+﻿@model ShiftCompliance.Web.Models.Vm.ShiftBudgetReportPageVm
+@{
+    ViewData["Title"] = "Shift Budget vs Actual";
+}
+
+<h2>@ViewData["Title"]</h2>
+<p class="text-muted small mb-3">
+    Uses <strong>active</strong> item-level budgets as a constant per shift for the selected date range.
+</p>
+
+@if (ViewBag.Error != null)
+{
+    <div class="alert alert-danger">@ViewBag.Error</div>
+}
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-auto">
+        <label class="form-label">From</label>
+        <input type="date" name="DateFrom" class="form-control"
+               value="@(Model.Query.DateFrom?.ToString("yyyy-MM-dd"))" />
+    </div>
+    <div class="col-auto">
+        <label class="form-label">To</label>
+        <input type="date" name="DateTo" class="form-control"
+               value="@(Model.Query.DateTo?.ToString("yyyy-MM-dd"))" />
+    </div>
+    <div class="col-auto">
+        <label class="form-label">Shift</label>
+        <select name="Shift" class="form-select">
+            <option value="">(All)</option>
+            <option value="Morning" selected="@(Model.Query.Shift == "Morning")">Morning</option>
+            <option value="Afternoon" selected="@(Model.Query.Shift == "Afternoon")">Afternoon</option>
+            <option value="Night" selected="@(Model.Query.Shift == "Night")">Night</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <label class="form-label">Item</label>
+        <select name="ItemNo" class="form-select">
+            <option value="">(All)</option>
+            @foreach (var it in Model.Items)
+            {
+                <option value="@it.Value" selected="@(Model.Query.ItemNo == it.Value)">@it.Text</option>
+            }
+        </select>
+    </div>
+    <div class="col-auto align-self-end">
+        <button class="btn btn-secondary">Run</button>
+        <a class="btn btn-outline-primary"
+           asp-action="ShiftBudgetVsActualCsv"
+           asp-route-DateFrom="@(Model.Query.DateFrom?.ToString("yyyy-MM-dd"))"
+           asp-route-DateTo="@(Model.Query.DateTo?.ToString("yyyy-MM-dd"))"
+           asp-route-Shift="@(Model.Query.Shift)"
+           asp-route-ItemNo="@(Model.Query.ItemNo)">
+            Export CSV
+        </a>
+    </div>
+</form>
+
+<div class="row g-3 mb-3">
+    @* <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="text-muted">Total Budget</div>
+                <div class="h4 mb-0">@Model.Totals.Budget</div>
+            </div>
+        </div>
+    </div> *@
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="text-muted">Total Actual</div>
+                <div class="h4 mb-0">@Model.Totals.Actual</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="text-muted">Variance</div>
+                <div class="h4 mb-0">@Model.Totals.Variance</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="text-muted">Attainment %</div>
+                <div class="h4 mb-0">@((Model.Totals.AttainmentPct?.ToString("0.0") ?? "—"))</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<table class="table table-bordered table-sm align-middle">
+    <thead class="table-light">
+        <tr>
+            <th style="width:140px">Date</th>
+            <th style="width:140px">Shift</th>
+            <th class="text-end" style="width:160px">Budget</th>
+            <th class="text-end" style="width:160px">Actual</th>
+            <th style="width:120px">Grade</th>
+            <th class="text-end" style="width:160px">Variance</th>
+            <th class="text-end" style="width:140px">Attainment %</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var r in Model.Rows)
+        {
+            var varianceClass = r.Variance < 0 ? "text-danger" : (r.Variance > 0 ? "text-success" : "");
+            <tr>
+                <td>@r.Date.ToString("yyyy-MM-dd")</td>
+                <td>@r.Shift</td>
+                <td class="text-end">@r.Budget</td>
+                <td class="text-end">@r.Actual</td>
+                <td class="@r.GradeColorClass">@r.Grade</td>
+                <td class="text-end @varianceClass">@r.Variance</td>
+                <td class="text-end">@(r.AttainmentPct.HasValue ? r.AttainmentPct.Value.ToString("0.0") : "-")</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<p class="small text-muted">
+    <strong>Legend:</strong>
+    <span class="badge bg-success">Green ≥ 100%</span>
+    <span class="badge bg-warning text-dark">Yellow ≥ 95%</span>
+    <span class="badge bg-danger">Red &lt; 95%</span>
+</p>

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ShiftCompliance.Api.Data;
 
@@ -11,9 +12,11 @@ using ShiftCompliance.Api.Data;
 namespace ShiftCompliance.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250901205014_UndoItem1")]
+    partial class UndoItem1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -208,14 +211,14 @@ namespace ShiftCompliance.Api.Migrations
 
                     b.Property<string>("ItemNo")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Remark")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Shift")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("TargetQty")
                         .HasColumnType("decimal(18,2)");
@@ -224,10 +227,6 @@ namespace ShiftCompliance.Api.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Shift", "ItemNo")
-                        .IsUnique()
-                        .HasFilter("[IsActive] = 1");
 
                     b.ToTable("ShiftItemBudgets");
                 });
